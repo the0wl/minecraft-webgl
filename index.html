@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+		</style>
+    </head>
+	<body>
+        <script src="js/three.min.js"></script>
+        <script>
+            class Block {
+
+                constructor (x, y, z, color, scene) {
+                    this.x = x
+                    this.y = y
+                    this.z = z
+                    this.color = color
+                    this.scene = scene
+                }
+
+                display() {
+                    // Box
+                    this.shape = new THREE.BoxGeometry(2, 2, 2)
+                    this.mesh = new THREE.MeshBasicMaterial({ color: this.color })
+                    this.cube = new THREE.Mesh(this.shape, this.mesh)
+                    this.scene.add(this.cube)
+
+                    this.cube.position.x = this.x
+                    this.cube.position.y = this.y
+                    this.cube.position.z = this.z
+
+                    // Wireframe
+                    this.edges = new THREE.EdgesGeometry(this.shape)
+                    this.lmesh = new THREE.LineBasicMaterial({ color: 0x000000 })
+                    this.lines = new THREE.LineSegments(this.edges, this.lmesh)
+
+                    this.scene.add(this.lines)
+
+                    this.lines.position.x = this.x
+                    this.lines.position.y = this.y
+                    this.lines.position.z = this.z
+
+                }
+
+            }
+
+
+
+
+            const scene = new THREE.Scene()
+			const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+            const renderer = new THREE.WebGLRenderer({ antialias: true })
+
+            let onPointerDownPointerX, onPointerDownPointerY, onPointerDownLon, onPointerDownLat;
+            let lon = 0, lat = 35, phi = 0, theta = 0;
+            
+			renderer.setSize(window.innerWidth, window.innerHeight)
+			document.body.appendChild(renderer.domElement)
+
+            const fundation = []
+
+            for(let x = 0; x < 10; x++) {
+                for(let z = -4; z < 5; z++) {
+                    fundation.push(new Block(x * -2, 0, z * 2, 0x00ff00, scene))
+                }
+            }
+            
+            for(let x = 0; x < fundation.length; x++) {
+                fundation[x].display()
+            }
+
+            const floor = []
+
+            for(let x = 0; x < 10; x++) {
+                for(let z = -4; z < 5; z++) {
+                    if (Math.floor(Math.random() * 10) > 7) {
+                        floor.push(new Block(x * -2, 2, z * 2, 0x00ff00, scene))
+                    }
+                }
+            }
+            
+            for(let x = 0; x < floor.length; x++) {
+                
+                floor[x].display()
+            }
+
+            document.addEventListener( 'pointerdown', onPointerDown );
+			document.addEventListener( 'wheel', onDocumentMouseWheel );
+			window.addEventListener( 'resize', onWindowResized );
+
+            function onWindowResized() {
+
+                renderer.setSize( window.innerWidth, window.innerHeight );
+
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+
+            }
+
+            function onPointerDown( event ) {
+
+                event.preventDefault();
+
+                onPointerDownPointerX = event.clientX;
+                onPointerDownPointerY = event.clientY;
+
+                onPointerDownLon = lon;
+                onPointerDownLat = lat;
+
+                document.addEventListener( 'pointermove', onPointerMove );
+                document.addEventListener( 'pointerup', onPointerUp );
+
+            }
+
+            function onPointerMove( event ) {
+
+                lon = ( event.clientX - onPointerDownPointerX ) * 0.1 + onPointerDownLon;
+                lat = ( event.clientY - onPointerDownPointerY ) * 0.1 + onPointerDownLat;
+
+            }
+
+            function onPointerUp() {
+
+                document.removeEventListener( 'pointermove', onPointerMove );
+                document.removeEventListener( 'pointerup', onPointerUp );
+
+            }
+
+            function onDocumentMouseWheel( event ) {
+
+                const fov = camera.fov + event.deltaY * 0.05;
+
+                camera.fov = THREE.MathUtils.clamp( fov, 10, 75 );
+
+                camera.updateProjectionMatrix();
+
+            }
+
+            function update() {
+
+            }
+
+            function render() {
+				lat = Math.max(- 85, Math.min(85, lat))
+				phi = THREE.MathUtils.degToRad(90 - lat)
+                theta = THREE.MathUtils.degToRad(lon)
+                
+                camera.position.x = 10 * Math.sin( phi ) * Math.cos( theta )
+				camera.position.y = 15 * Math.cos( phi )
+				camera.position.z = 10 * Math.sin( phi ) * Math.sin( theta )
+
+				camera.lookAt( scene.position );
+
+                renderer.render(scene, camera)
+            }
+
+			function gameLoop() {
+				requestAnimationFrame(gameLoop)
+                update()
+				render()
+			}
+
+            gameLoop()
+        </script>
+	</body>
+</html>
